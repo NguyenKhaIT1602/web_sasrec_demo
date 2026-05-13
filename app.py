@@ -44,24 +44,29 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def download_from_google_drive(filename, file_id):
-    """Tải 1 file từ Google Drive về thư mục chạy app."""
+    import gdown
+
     output_path = os.path.join(APP_DIR, filename)
 
     if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
         return output_path
 
     url = f"https://drive.google.com/uc?id={file_id}"
-    with st.spinner(f"Đang tải {filename} từ Google Drive..."):
-        gdown.download(url, output_path, quiet=False, fuzzy=True)
+    st.info(f"Đang tải file: {filename}")
 
-    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+    result = gdown.download(
+        url=url,
+        output=output_path,
+        quiet=False
+    )
+
+    if result is None or not os.path.exists(output_path):
         raise RuntimeError(
-            f"Không tải được {filename}. Hãy kiểm tra quyền chia sẻ Google Drive: "
-            "Anyone with the link -> Viewer."
+            f"Không tải được file {filename}. "
+            "Hãy kiểm tra Google Drive đã bật Anyone with the link chưa."
         )
 
     return output_path
-
 
 def ensure_required_files():
     """Đảm bảo toàn bộ model/cache đã có trước khi load."""
