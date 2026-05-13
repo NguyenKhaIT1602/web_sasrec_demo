@@ -44,6 +44,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def download_from_google_drive(filename, file_id):
+    """Tải file từ Google Drive nếu file chưa tồn tại.
+
+    Hàm này chạy im lặng để giao diện Streamlit không hiện 4 dòng tải riêng lẻ.
+    Thông báo tổng quát được xử lý ở phần MAIN bằng st.spinner/st.success.
+    """
     import gdown
 
     output_path = os.path.join(APP_DIR, filename)
@@ -52,18 +57,17 @@ def download_from_google_drive(filename, file_id):
         return output_path
 
     url = f"https://drive.google.com/uc?id={file_id}"
-    st.info(f"Đang tải file: {filename}")
 
     result = gdown.download(
         url=url,
         output=output_path,
-        quiet=False
+        quiet=True
     )
 
-    if result is None or not os.path.exists(output_path):
+    if result is None or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         raise RuntimeError(
             f"Không tải được file {filename}. "
-            "Hãy kiểm tra Google Drive đã bật Anyone with the link chưa."
+            "Hãy kiểm tra Google Drive đã bật Anyone with the link -> Viewer chưa."
         )
 
     return output_path
@@ -1258,11 +1262,14 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-model, item_matrix, item_meta, user_history, filter_data, missing = load_all()
+with st.spinner("🚀 Đang tải dữ liệu AI Recommendation System..."):
+    model, item_matrix, item_meta, user_history, filter_data, missing = load_all()
 
 if missing:
     st.error("⚠️ Thiếu các file cần thiết.")
     st.stop()
+
+st.success("✅ Đã load xong toàn bộ dữ liệu!")
 
 categories, brands = build_filter_options(filter_data)
 all_users = sorted(list(user_history.keys()))
