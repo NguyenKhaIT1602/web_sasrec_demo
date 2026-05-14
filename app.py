@@ -1195,7 +1195,43 @@ def load_all(dataset_name):
     with open(USER_HISTORY_PATH, "rb") as f:
         user_history = pickle.load(f)
 
-    user_history = {int(k): [int(x) for x in v] for k, v in user_history.items()}
+    # Chuẩn hóa user_history an toàn.
+    # Một số file pkl có thể chứa item/user dạng None, dict, list con, chuỗi lạ,
+    # hoặc ASIN không ép được sang int. Ta bỏ qua phần tử lỗi để app không crash.
+    def safe_int(x):
+        try:
+            return int(x)
+        except Exception:
+            return None
+
+    clean_user_history = {}
+
+    if isinstance(user_history, dict):
+        iterator = user_history.items()
+    else:
+        iterator = []
+
+    for k, v in iterator:
+        user_id = safe_int(k)
+
+        if user_id is None:
+            continue
+
+        if not isinstance(v, (list, tuple)):
+            continue
+
+        seq = []
+
+        for x in v:
+            item_id = safe_int(x)
+
+            if item_id is not None:
+                seq.append(item_id)
+
+        if len(seq) > 0:
+            clean_user_history[user_id] = seq
+
+    user_history = clean_user_history
 
     ckpt = torch.load(MODEL_PATH, map_location=DEVICE)
 
