@@ -51,7 +51,7 @@ DATASETS = {
     },
     "Videos": {
         "display": "📹 Videos",
-        "description": "Đề xuất video/sản phẩm Videos từ Amazon Videos.",
+        "description": "Đề xuất video/sản phẩm videos từ Amazon Videos.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1cUs5l_eE_inJpywjH23lQuLB54abmMab/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1jVrM6LKjRTGLvj8A6bHO6tDWHIBGoEQs/view?usp=sharing",
@@ -59,6 +59,18 @@ DATASETS = {
             "user_history.pkl": "https://drive.google.com/file/d/1R9akEy9OQM4ti0pRx4T4HB7SgKw_3tiu/view?usp=sharing",
         },
     },
+    "Toys": {
+        "display": "🚗 Toys",
+        "description": "Đề xuất toys/sản phẩm toys từ Amazon Toys.",
+        "files": {
+            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1uEjh1XfoxatnHelp2s2zt3XKEZugAe-1/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/12y8gh82GfvvTiiD54z5UO4ET57uZSBQC/view?usp=sharing",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1WXrZa-2GL62IUkspntWVGwWDUi_Nccbn/view?usp=sharing",
+            "user_history.pkl": "https://drive.google.com/file/d/1g914V7s6CQPTAPKK1YFWdcm3OSDHql2t/view?usp=sharing",
+        },
+    },
+    
+    
 }
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
