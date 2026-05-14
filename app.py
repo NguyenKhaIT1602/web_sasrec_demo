@@ -1206,8 +1206,13 @@ def load_all(dataset_name):
 
     clean_user_history = {}
 
+    # Hỗ trợ cả 2 kiểu user_history phổ biến:
+    # 1) dict: {user_id: [item_id, item_id, ...]}
+    # 2) list/tuple: [[item_id, ...], [item_id, ...], ...]
     if isinstance(user_history, dict):
         iterator = user_history.items()
+    elif isinstance(user_history, (list, tuple)):
+        iterator = enumerate(user_history)
     else:
         iterator = []
 
@@ -1225,7 +1230,8 @@ def load_all(dataset_name):
         for x in v:
             item_id = safe_int(x)
 
-            if item_id is not None:
+            # Chỉ giữ item_id hợp lệ nằm trong item_matrix để tránh lỗi index về sau
+            if item_id is not None and 0 < item_id < item_matrix.shape[0]:
                 seq.append(item_id)
 
         if len(seq) > 0:
@@ -1430,9 +1436,21 @@ st.success(f"✅ Đã load xong dữ liệu {DATASETS[selected_dataset]['display
 categories, brands = build_filter_options(filter_data)
 all_users = sorted(list(user_history.keys()))
 
+# FIX LỖI IndexError: all_users[0]
+# Nếu file user_history.pkl rỗng/sai cấu trúc/không có user hợp lệ thì không cho vào tab gợi ý.
+has_valid_users = len(all_users) > 0
+
 st.markdown('<div class="nav-box">', unsafe_allow_html=True)
-page = st.radio("Navigation", ["🏠 Khám phá", "🎯 Gợi ý"], horizontal=True, label_visibility="collapsed")
+nav_options = ["🏠 Khám phá", "🎯 Gợi ý"] if has_valid_users else ["🏠 Khám phá"]
+page = st.radio("Navigation", nav_options, horizontal=True, label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
+
+if not has_valid_users:
+    st.warning(
+        "⚠️ Không tìm thấy user hợp lệ trong file user_history.pkl. "
+        "Trang Khám phá vẫn chạy bình thường, nhưng trang Gợi ý cần user_history có dạng "
+        "{user_id: [item_id_1, item_id_2, ...]}."
+    )
 
 
 @st.cache_data
@@ -1498,8 +1516,23 @@ if page == "🏠 Khám phá":
 
 else:
     st.sidebar.markdown("### 🎯 Cấu hình đề xuất")
-    if "selected_user" not in st.session_state: st.session_state.selected_user = all_users[0]
-    selected_user = st.sidebar.selectbox("👤 Chọn ID", all_users, index=all_users.index(st.session_state.selected_user) if st.session_state.selected_user in all_users else 0)
+
+    # Chặn an toàn lần 2 để không bao giờ gọi all_users[0] khi danh sách rỗng
+    if not all_users:
+        st.error(
+            "❌ Không có user nào để tạo đề xuất. "
+            "Hãy kiểm tra lại file user_history.pkl hoặc chọn dataset khác."
+        )
+        st.stop()
+
+    if "selected_user" not in st.session_state or st.session_state.selected_user not in all_users:
+        st.session_state.selected_user = all_users[0]
+
+    selected_user = st.sidebar.selectbox(
+        "👤 Chọn ID",
+        all_users,
+        index=all_users.index(st.session_state.selected_user)
+    )
     st.session_state.selected_user = selected_user
 
     if st.sidebar.button("🎲 Chọn ngẫu nhiên"):
