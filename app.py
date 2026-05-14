@@ -1070,13 +1070,97 @@ def load_all(dataset_name):
     if missing:
         return None, None, None, None, None, missing
 
-    item_matrix = torch.load(ITEM_EMB_PATH, map_location=DEVICE)
+    # ------------------------------------------------------------
+    # Load item embedding safely
+    # ------------------------------------------------------------
+    # Một số file .pt lưu trực tiếp Tensor, nhưng một số file lại lưu dạng dict/checkpoint.
+    # Đoạn này tự tìm tensor 2 chiều trong file để tránh lỗi: AttributeError: ... .float()
 
-    if isinstance(item_matrix, dict):
-        for k in ["fused_item_emb", "item_emb", "emb", "item_matrix"]:
-            if k in item_matrix:
-                item_matrix = item_matrix[k]
-                break
+    item_matrix_raw = torch.load(ITEM_EMB_PATH, map_location=DEVICE)
+
+    def extract_item_matrix(obj):
+        # Trường hợp đúng nhất: file là Tensor [num_items, hidden_dim]
+        if torch.is_tensor(obj):
+            return obj
+
+        # Trường hợp file là list/tuple có thể chuyển thành tensor
+        if isinstance(obj, (list, tuple)):
+            try:
+                t = torch.tensor(obj)
+                if t.dim() == 2:
+                    return t
+            except Exception:
+                pass
+
+        # Trường hợp file là dict/checkpoint
+        if isinstance(obj, dict):
+            preferred_keys = [
+                "fused_item_emb",
+                "item_emb",
+                "item_matrix",
+                "emb",
+                "embedding",
+                "embeddings",
+                "item_embeddings",
+                "fused_emb",
+                "weight",
+            ]
+
+            # Tìm theo key quen thuộc trước
+            for k in preferred_keys:
+                if k in obj:
+                    v = obj[k]
+                    if torch.is_tensor(v):
+                        return v
+                    if isinstance(v, (list, tuple)):
+                        try:
+                            t = torch.tensor(v)
+                            if t.dim() == 2:
+                                return t
+                        except Exception:
+                            pass
+                    if isinstance(v, dict):
+                        found = extract_item_matrix(v)
+                        if found is not None:
+                            return found
+
+            # Nếu không có key quen thuộc, tự tìm tensor 2 chiều lớn nhất trong dict
+            best_tensor = None
+            best_size = -1
+
+            for k, v in obj.items():
+                if torch.is_tensor(v) and v.dim() == 2:
+                    size = v.shape[0] * v.shape[1]
+                    if size > best_size:
+                        best_tensor = v
+                        best_size = size
+
+                elif isinstance(v, dict):
+                    found = extract_item_matrix(v)
+                    if found is not None and found.dim() == 2:
+                        size = found.shape[0] * found.shape[1]
+                        if size > best_size:
+                            best_tensor = found
+                            best_size = size
+
+            return best_tensor
+
+        return None
+
+    item_matrix = extract_item_matrix(item_matrix_raw)
+
+    if item_matrix is None or not torch.is_tensor(item_matrix):
+        raise TypeError(
+            "Không tìm thấy item embedding tensor trong file fused_item_emb_128.pt. "
+            f"Kiểu dữ liệu đang load được: {type(item_matrix_raw)}. "
+            "Hãy kiểm tra lại link Google Drive của fused_item_emb_128.pt."
+        )
+
+    if item_matrix.dim() != 2:
+        raise ValueError(
+            f"Item embedding phải là tensor 2 chiều [num_items, hidden_dim], "
+            f"nhưng hiện tại shape = {tuple(item_matrix.shape)}"
+        )
 
     item_matrix = item_matrix.float().to(DEVICE)
     item_matrix = torch.nn.functional.normalize(item_matrix, dim=-1)
