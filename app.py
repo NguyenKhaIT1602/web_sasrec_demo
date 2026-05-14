@@ -17,16 +17,17 @@ import pandas as pd
 # PATH
 # ============================================================
 
+
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 DATASET_ROOT = os.path.join(APP_DIR, "datasets")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ============================================================
-# MULTI DATASET GOOGLE DRIVE FILES
+# MULTI DATASET - CHỈ THÊM CHỌN DỮ LIỆU, GIỮ NGUYÊN LOGIC CŨ
 # ============================================================
-# Giữ nguyên app.py + requirements.txt trên GitHub.
-# Mỗi dataset sẽ được tải vào thư mục riêng: datasets/Beauty, datasets/Movies.
-# Google Drive cần bật quyền: Anyone with the link -> Viewer.
+# Mỗi dataset có 4 file giống code gốc:
+# sasrec_qwen_best.pt, fused_item_emb_128.pt, item_web_meta.pkl, user_history.pkl
+# File sẽ được tải vào: datasets/<DatasetName>/
 
 DATASETS = {
     "Beauty": {
@@ -46,22 +47,18 @@ DATASETS = {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1lEtd22DNLlo3a1widi9KljC2mgzSN0w1/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1lEtd22DNLlo3a1widi9KljC2mgzSN0w1/view?usp=sharing",
             "item_web_meta.pkl": "https://drive.google.com/file/d/17lsY3PuowRM5cXeDzk9vSU5mODxuF0ri/view?usp=sharing",
-            "user_history.pkl": "https://drive.google.com/file/d/1PSHhecbBQFcTUWw7ojzyZkGp5dvQfBu9/view?usp=sharing",
+            "user_history.pkl": "https://drive.google.com/file/d/1vLbKID7eFIlhDhRtVZuFmxFo9cGVgY9L/view?usp=sharing",
         },
     },
 }
 
 
 def extract_drive_id(file_id_or_url):
-    """Nhận cả Google Drive URL đầy đủ hoặc file ID."""
     file_id_or_url = str(file_id_or_url).strip()
-
     if "drive.google.com/file/d/" in file_id_or_url:
         return file_id_or_url.split("/file/d/")[1].split("/")[0]
-
     if "id=" in file_id_or_url:
         return file_id_or_url.split("id=")[1].split("&")[0]
-
     return file_id_or_url
 
 
@@ -72,7 +69,6 @@ def get_dataset_dir(dataset_name):
 
 
 def download_from_google_drive(dataset_name, filename, file_id_or_url):
-    """Tải 1 file từ Google Drive về thư mục riêng của dataset."""
     dataset_dir = get_dataset_dir(dataset_name)
     output_path = os.path.join(dataset_dir, filename)
 
@@ -95,7 +91,6 @@ def download_from_google_drive(dataset_name, filename, file_id_or_url):
 
 
 def ensure_required_files(dataset_name):
-    """Đảm bảo toàn bộ model/cache của dataset đã có trước khi load."""
     paths = {}
     for filename, file_id_or_url in DATASETS[dataset_name]["files"].items():
         paths[filename] = download_from_google_drive(dataset_name, filename, file_id_or_url)
@@ -332,7 +327,7 @@ html, body, [data-testid="stAppViewContainer"] {
     display: flex;
     align-items: center;
     gap: 4px;
-    white-space: nowrap;
+    white-space: nowrap;s
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
@@ -1064,103 +1059,19 @@ def load_all(dataset_name):
 
     missing = []
     for p in [MODEL_PATH, ITEM_EMB_PATH, ITEM_META_PATH, USER_HISTORY_PATH]:
-        if not os.path.exists(p):
+        if not os.path.exists(p) or os.path.getsize(p) == 0:
             missing.append(p)
 
     if missing:
         return None, None, None, None, None, missing
 
-    # ------------------------------------------------------------
-    # Load item embedding safely
-    # ------------------------------------------------------------
-    # Một số file .pt lưu trực tiếp Tensor, nhưng một số file lại lưu dạng dict/checkpoint.
-    # Đoạn này tự tìm tensor 2 chiều trong file để tránh lỗi: AttributeError: ... .float()
+    item_matrix = torch.load(ITEM_EMB_PATH, map_location=DEVICE)
 
-    item_matrix_raw = torch.load(ITEM_EMB_PATH, map_location=DEVICE)
-
-    def extract_item_matrix(obj):
-        # Trường hợp đúng nhất: file là Tensor [num_items, hidden_dim]
-        if torch.is_tensor(obj):
-            return obj
-
-        # Trường hợp file là list/tuple có thể chuyển thành tensor
-        if isinstance(obj, (list, tuple)):
-            try:
-                t = torch.tensor(obj)
-                if t.dim() == 2:
-                    return t
-            except Exception:
-                pass
-
-        # Trường hợp file là dict/checkpoint
-        if isinstance(obj, dict):
-            preferred_keys = [
-                "fused_item_emb",
-                "item_emb",
-                "item_matrix",
-                "emb",
-                "embedding",
-                "embeddings",
-                "item_embeddings",
-                "fused_emb",
-                "weight",
-            ]
-
-            # Tìm theo key quen thuộc trước
-            for k in preferred_keys:
-                if k in obj:
-                    v = obj[k]
-                    if torch.is_tensor(v):
-                        return v
-                    if isinstance(v, (list, tuple)):
-                        try:
-                            t = torch.tensor(v)
-                            if t.dim() == 2:
-                                return t
-                        except Exception:
-                            pass
-                    if isinstance(v, dict):
-                        found = extract_item_matrix(v)
-                        if found is not None:
-                            return found
-
-            # Nếu không có key quen thuộc, tự tìm tensor 2 chiều lớn nhất trong dict
-            best_tensor = None
-            best_size = -1
-
-            for k, v in obj.items():
-                if torch.is_tensor(v) and v.dim() == 2:
-                    size = v.shape[0] * v.shape[1]
-                    if size > best_size:
-                        best_tensor = v
-                        best_size = size
-
-                elif isinstance(v, dict):
-                    found = extract_item_matrix(v)
-                    if found is not None and found.dim() == 2:
-                        size = found.shape[0] * found.shape[1]
-                        if size > best_size:
-                            best_tensor = found
-                            best_size = size
-
-            return best_tensor
-
-        return None
-
-    item_matrix = extract_item_matrix(item_matrix_raw)
-
-    if item_matrix is None or not torch.is_tensor(item_matrix):
-        raise TypeError(
-            "Không tìm thấy item embedding tensor trong file fused_item_emb_128.pt. "
-            f"Kiểu dữ liệu đang load được: {type(item_matrix_raw)}. "
-            "Hãy kiểm tra lại link Google Drive của fused_item_emb_128.pt."
-        )
-
-    if item_matrix.dim() != 2:
-        raise ValueError(
-            f"Item embedding phải là tensor 2 chiều [num_items, hidden_dim], "
-            f"nhưng hiện tại shape = {tuple(item_matrix.shape)}"
-        )
+    if isinstance(item_matrix, dict):
+        for k in ["fused_item_emb", "item_emb", "emb", "item_matrix"]:
+            if k in item_matrix:
+                item_matrix = item_matrix[k]
+                break
 
     item_matrix = item_matrix.float().to(DEVICE)
     item_matrix = torch.nn.functional.normalize(item_matrix, dim=-1)
@@ -1195,49 +1106,7 @@ def load_all(dataset_name):
     with open(USER_HISTORY_PATH, "rb") as f:
         user_history = pickle.load(f)
 
-    # Chuẩn hóa user_history an toàn.
-    # Một số file pkl có thể chứa item/user dạng None, dict, list con, chuỗi lạ,
-    # hoặc ASIN không ép được sang int. Ta bỏ qua phần tử lỗi để app không crash.
-    def safe_int(x):
-        try:
-            return int(x)
-        except Exception:
-            return None
-
-    clean_user_history = {}
-
-    # Hỗ trợ cả 2 kiểu user_history phổ biến:
-    # 1) dict: {user_id: [item_id, item_id, ...]}
-    # 2) list/tuple: [[item_id, ...], [item_id, ...], ...]
-    if isinstance(user_history, dict):
-        iterator = user_history.items()
-    elif isinstance(user_history, (list, tuple)):
-        iterator = enumerate(user_history)
-    else:
-        iterator = []
-
-    for k, v in iterator:
-        user_id = safe_int(k)
-
-        if user_id is None:
-            continue
-
-        if not isinstance(v, (list, tuple)):
-            continue
-
-        seq = []
-
-        for x in v:
-            item_id = safe_int(x)
-
-            # Chỉ giữ item_id hợp lệ nằm trong item_matrix để tránh lỗi index về sau
-            if item_id is not None and 0 < item_id < item_matrix.shape[0]:
-                seq.append(item_id)
-
-        if len(seq) > 0:
-            clean_user_history[user_id] = seq
-
-    user_history = clean_user_history
+    user_history = {int(k): [int(x) for x in v] for k, v in user_history.items()}
 
     ckpt = torch.load(MODEL_PATH, map_location=DEVICE)
 
@@ -1420,15 +1289,15 @@ st.sidebar.markdown("### 🗂️ Chọn dữ liệu")
 selected_dataset = st.sidebar.selectbox(
     "Dataset đề xuất",
     options=list(DATASETS.keys()),
-    format_func=lambda x: DATASETS[x]["display"]
+    format_func=lambda x: DATASETS[x]["display"],
 )
 st.sidebar.info(DATASETS[selected_dataset]["description"])
 
-with st.spinner(f"🚀 Đang tải dữ liệu {DATASETS[selected_dataset]['display']}..."):
-    model, item_matrix, item_meta, user_history, filter_data, missing = load_all(selected_dataset)
+model, item_matrix, item_meta, user_history, filter_data, missing = load_all(selected_dataset)
 
 if missing:
     st.error("⚠️ Thiếu các file cần thiết.")
+    st.write(missing)
     st.stop()
 
 st.success(f"✅ Đã load xong dữ liệu {DATASETS[selected_dataset]['display']}!")
@@ -1436,21 +1305,16 @@ st.success(f"✅ Đã load xong dữ liệu {DATASETS[selected_dataset]['display
 categories, brands = build_filter_options(filter_data)
 all_users = sorted(list(user_history.keys()))
 
-# FIX LỖI IndexError: all_users[0]
-# Nếu file user_history.pkl rỗng/sai cấu trúc/không có user hợp lệ thì không cho vào tab gợi ý.
-has_valid_users = len(all_users) > 0
+if len(all_users) == 0:
+    st.error(
+        "⚠️ user_history.pkl không có user hợp lệ. "
+        "Hãy kiểm tra đúng file user_history.pkl của dataset đang chọn."
+    )
+    st.stop()
 
 st.markdown('<div class="nav-box">', unsafe_allow_html=True)
-nav_options = ["🏠 Khám phá", "🎯 Gợi ý"] if has_valid_users else ["🏠 Khám phá"]
-page = st.radio("Navigation", nav_options, horizontal=True, label_visibility="collapsed")
+page = st.radio("Navigation", ["🏠 Khám phá", "🎯 Gợi ý"], horizontal=True, label_visibility="collapsed")
 st.markdown('</div>', unsafe_allow_html=True)
-
-if not has_valid_users:
-    st.warning(
-        "⚠️ Không tìm thấy user hợp lệ trong file user_history.pkl. "
-        "Trang Khám phá vẫn chạy bình thường, nhưng trang Gợi ý cần user_history có dạng "
-        "{user_id: [item_id_1, item_id_2, ...]}."
-    )
 
 
 @st.cache_data
@@ -1516,23 +1380,8 @@ if page == "🏠 Khám phá":
 
 else:
     st.sidebar.markdown("### 🎯 Cấu hình đề xuất")
-
-    # Chặn an toàn lần 2 để không bao giờ gọi all_users[0] khi danh sách rỗng
-    if not all_users:
-        st.error(
-            "❌ Không có user nào để tạo đề xuất. "
-            "Hãy kiểm tra lại file user_history.pkl hoặc chọn dataset khác."
-        )
-        st.stop()
-
-    if "selected_user" not in st.session_state or st.session_state.selected_user not in all_users:
-        st.session_state.selected_user = all_users[0]
-
-    selected_user = st.sidebar.selectbox(
-        "👤 Chọn ID",
-        all_users,
-        index=all_users.index(st.session_state.selected_user)
-    )
+    if "selected_user" not in st.session_state: st.session_state.selected_user = all_users[0]
+    selected_user = st.sidebar.selectbox("👤 Chọn ID", all_users, index=all_users.index(st.session_state.selected_user) if st.session_state.selected_user in all_users else 0)
     st.session_state.selected_user = selected_user
 
     if st.sidebar.button("🎲 Chọn ngẫu nhiên"):
@@ -1543,7 +1392,8 @@ else:
     st.sidebar.markdown("### ✨ AI Reasoning")
     use_llm = st.sidebar.toggle("Kích hoạt LLM", value=True)
     api_type = st.sidebar.selectbox("AI Provider", ["Groq", "OpenAI"], index=0)
-    api_key = st.sidebar.text_input("API Key", value="", type="password", help="Nhập Groq/OpenAI API key nếu muốn dùng AI Reasoning.")
+    default_key = "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" if api_type == "Groq" else ""
+    api_key = st.sidebar.text_input("API Key", value=default_key, type="password")
 
     if "top_k" not in st.session_state: st.session_state.top_k = 10
     top_k = st.sidebar.select_slider("Top-K", options=[1, 5, 10, 20], value=st.session_state.top_k)
