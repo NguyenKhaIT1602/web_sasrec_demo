@@ -19,15 +19,14 @@ import pandas as pd
 
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_ROOT = os.path.join(APP_DIR, "datasets")
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ============================================================
-# MULTI DATASET - CHỈ THÊM CHỌN DỮ LIỆU, GIỮ NGUYÊN LOGIC CŨ
+# GOOGLE DRIVE DATASETS
 # ============================================================
-# Mỗi dataset có 4 file giống code gốc:
-# sasrec_qwen_best.pt, fused_item_emb_128.pt, item_web_meta.pkl, user_history.pkl
-# File sẽ được tải vào: datasets/<DatasetName>/
+# Lưu ý:
+# - Chỉ để app.py + requirements.txt trên GitHub.
+# - Các file .pt/.pkl sẽ được tải tự động từ Google Drive khi app chạy lần đầu.
+# - Google Drive cần bật quyền: Anyone with the link -> Viewer.
 
 DATASETS = {
     "Beauty": {
@@ -52,49 +51,69 @@ DATASETS = {
     },
 }
 
-
-def extract_drive_id(file_id_or_url):
-    file_id_or_url = str(file_id_or_url).strip()
-    if "drive.google.com/file/d/" in file_id_or_url:
-        return file_id_or_url.split("/file/d/")[1].split("/")[0]
-    if "id=" in file_id_or_url:
-        return file_id_or_url.split("id=")[1].split("&")[0]
-    return file_id_or_url
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def get_dataset_dir(dataset_name):
-    path = os.path.join(DATASET_ROOT, dataset_name)
+def extract_drive_id(url_or_id):
+    """Trích xuất Google Drive file_id từ link hoặc trả về trực tiếp nếu đã là ID."""
+    url_or_id = str(url_or_id).strip()
+    if "drive.google.com" not in url_or_id:
+        return url_or_id
+
+    m = re.search(r"/d/([a-zA-Z0-9_-]+)", url_or_id)
+    if m:
+        return m.group(1)
+
+    m = re.search(r"id=([a-zA-Z0-9_-]+)", url_or_id)
+    if m:
+        return m.group(1)
+
+    return url_or_id
+
+
+def dataset_dir(dataset_key):
+    """Mỗi dataset được lưu riêng để tránh ghi đè file giữa Beauty và Movies."""
+    path = os.path.join(APP_DIR, "data_cache", dataset_key)
     os.makedirs(path, exist_ok=True)
     return path
 
 
-def download_from_google_drive(dataset_name, filename, file_id_or_url):
-    dataset_dir = get_dataset_dir(dataset_name)
-    output_path = os.path.join(dataset_dir, filename)
+def get_dataset_paths(dataset_key):
+    base = dataset_dir(dataset_key)
+    return {
+        "model": os.path.join(base, "sasrec_qwen_best.pt"),
+        "item_emb": os.path.join(base, "fused_item_emb_128.pt"),
+        "item_meta": os.path.join(base, "item_web_meta.pkl"),
+        "user_history": os.path.join(base, "user_history.pkl"),
+    }
+
+
+def download_from_google_drive(dataset_key, filename, url_or_id):
+    """Tải 1 file từ Google Drive vào thư mục riêng của dataset."""
+    output_path = os.path.join(dataset_dir(dataset_key), filename)
 
     if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
         return output_path
 
-    real_file_id = extract_drive_id(file_id_or_url)
-    url = f"https://drive.google.com/uc?id={real_file_id}"
+    file_id = extract_drive_id(url_or_id)
+    url = f"https://drive.google.com/uc?id={file_id}"
 
-    with st.spinner(f"Đang tải {filename} của {dataset_name} từ Google Drive..."):
-        result = gdown.download(url=url, output=output_path, quiet=False)
+    with st.spinner(f"Đang tải {DATASETS[dataset_key]['display']} - {filename} từ Google Drive..."):
+        gdown.download(url, output_path, quiet=False, fuzzy=True)
 
-    if result is None or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+    if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         raise RuntimeError(
-            f"Không tải được {filename} của dataset {dataset_name}. "
-            "Hãy kiểm tra quyền Google Drive: Anyone with the link -> Viewer."
+            f"Không tải được {filename}. Hãy kiểm tra quyền chia sẻ Google Drive: "
+            "Anyone with the link -> Viewer."
         )
 
     return output_path
 
 
-def ensure_required_files(dataset_name):
-    paths = {}
-    for filename, file_id_or_url in DATASETS[dataset_name]["files"].items():
-        paths[filename] = download_from_google_drive(dataset_name, filename, file_id_or_url)
-    return paths
+def ensure_required_files(dataset_key):
+    """Đảm bảo toàn bộ model/cache của dataset đã có trước khi load."""
+    for filename, url_or_id in DATASETS[dataset_key]["files"].items():
+        download_from_google_drive(dataset_key, filename, url_or_id)
 
 
 # ============================================================
@@ -327,7 +346,7 @@ html, body, [data-testid="stAppViewContainer"] {
     display: flex;
     align-items: center;
     gap: 4px;
-    white-space: nowrap;s
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     display: block;
@@ -1049,17 +1068,18 @@ def history_card(iid, item_meta, idx=0):
 # ============================================================
 
 @st.cache_resource(show_spinner=True)
-def load_all(dataset_name):
-    paths = ensure_required_files(dataset_name)
+def load_all(dataset_key):
+    ensure_required_files(dataset_key)
 
-    MODEL_PATH = paths["sasrec_qwen_best.pt"]
-    ITEM_EMB_PATH = paths["fused_item_emb_128.pt"]
-    ITEM_META_PATH = paths["item_web_meta.pkl"]
-    USER_HISTORY_PATH = paths["user_history.pkl"]
+    paths = get_dataset_paths(dataset_key)
+    MODEL_PATH = paths["model"]
+    ITEM_EMB_PATH = paths["item_emb"]
+    ITEM_META_PATH = paths["item_meta"]
+    USER_HISTORY_PATH = paths["user_history"]
 
     missing = []
     for p in [MODEL_PATH, ITEM_EMB_PATH, ITEM_META_PATH, USER_HISTORY_PATH]:
-        if not os.path.exists(p) or os.path.getsize(p) == 0:
+        if not os.path.exists(p):
             missing.append(p)
 
     if missing:
@@ -1087,6 +1107,7 @@ def load_all(dataset_name):
     search_blobs = [""] * num_items
 
     for iid, m in item_meta.items():
+        iid = int(iid)
         if 0 <= iid < num_items:
             t = get_title(m)
             b = get_brand(m)
@@ -1106,7 +1127,11 @@ def load_all(dataset_name):
     with open(USER_HISTORY_PATH, "rb") as f:
         user_history = pickle.load(f)
 
-    user_history = {int(k): [int(x) for x in v] for k, v in user_history.items()}
+    user_history = {
+        int(k): [int(x) for x in v]
+        for k, v in user_history.items()
+        if isinstance(v, (list, tuple)) and len(v) > 0
+    }
 
     ckpt = torch.load(MODEL_PATH, map_location=DEVICE)
 
@@ -1285,12 +1310,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("### 🗂️ Chọn dữ liệu")
+st.sidebar.markdown("### 📂 Chọn dữ liệu")
+
+dataset_keys = list(DATASETS.keys())
 selected_dataset = st.sidebar.selectbox(
-    "Dataset đề xuất",
-    options=list(DATASETS.keys()),
+    "Dataset",
+    dataset_keys,
     format_func=lambda x: DATASETS[x]["display"],
+    index=0
 )
+
 st.sidebar.info(DATASETS[selected_dataset]["description"])
 
 model, item_matrix, item_meta, user_history, filter_data, missing = load_all(selected_dataset)
@@ -1300,16 +1329,15 @@ if missing:
     st.write(missing)
     st.stop()
 
-st.success(f"✅ Đã load xong dữ liệu {DATASETS[selected_dataset]['display']}!")
+if user_history is None or len(user_history) == 0:
+    st.error("⚠️ Dataset này không có user history hoặc file user_history.pkl bị lỗi.")
+    st.stop()
 
 categories, brands = build_filter_options(filter_data)
 all_users = sorted(list(user_history.keys()))
 
-if len(all_users) == 0:
-    st.error(
-        "⚠️ user_history.pkl không có user hợp lệ. "
-        "Hãy kiểm tra đúng file user_history.pkl của dataset đang chọn."
-    )
+if not all_users:
+    st.error("⚠️ Không tìm thấy user nào trong dataset đã chọn.")
     st.stop()
 
 st.markdown('<div class="nav-box">', unsafe_allow_html=True)
@@ -1380,20 +1408,27 @@ if page == "🏠 Khám phá":
 
 else:
     st.sidebar.markdown("### 🎯 Cấu hình đề xuất")
-    if "selected_user" not in st.session_state: st.session_state.selected_user = all_users[0]
-    selected_user = st.sidebar.selectbox("👤 Chọn ID", all_users, index=all_users.index(st.session_state.selected_user) if st.session_state.selected_user in all_users else 0)
-    st.session_state.selected_user = selected_user
+
+    user_state_key = f"selected_user_{selected_dataset}"
+    if user_state_key not in st.session_state or st.session_state[user_state_key] not in all_users:
+        st.session_state[user_state_key] = all_users[0]
+
+    selected_user = st.sidebar.selectbox(
+        "👤 Chọn ID",
+        all_users,
+        index=all_users.index(st.session_state[user_state_key])
+    )
+    st.session_state[user_state_key] = selected_user
 
     if st.sidebar.button("🎲 Chọn ngẫu nhiên"):
-        st.session_state.selected_user = random.choice(all_users)
+        st.session_state[user_state_key] = random.choice(all_users)
         st.rerun()
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### ✨ AI Reasoning")
     use_llm = st.sidebar.toggle("Kích hoạt LLM", value=True)
     api_type = st.sidebar.selectbox("AI Provider", ["Groq", "OpenAI"], index=0)
-    default_key = "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" if api_type == "Groq" else ""
-    api_key = st.sidebar.text_input("API Key", value=default_key, type="password")
+    api_key = st.sidebar.text_input("API Key", value="", type="password", help="Nhập Groq/OpenAI API key nếu muốn dùng AI Reasoning.")
 
     if "top_k" not in st.session_state: st.session_state.top_k = 10
     top_k = st.sidebar.select_slider("Top-K", options=[1, 5, 10, 20], value=st.session_state.top_k)
