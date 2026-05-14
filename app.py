@@ -1306,7 +1306,7 @@ def recommend(model, item_matrix, item_meta, filter_data, user_history, user_id,
 st.markdown("""
 <div class="hero">
     <h1>🛒 Smart Commerce AI</h1>
-    <p>Trải nghiệm mua sắm thông minh được tối ưu bởi mô hình <b>SASRec</b> và <b>Qwen Embedding</b>.</p>
+    <p>Trải nghiệm mua sắm thông minh với mô hình <b>SASRec</b> và <b>Qwen Embedding</b>.</p>
 </div>
 """, unsafe_allow_html=True)
 
