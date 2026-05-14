@@ -44,7 +44,7 @@ DATASETS = {
         "description": "Đề xuất phim/sản phẩm Movies từ Amazon Movies.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1lEtd22DNLlo3a1widi9KljC2mgzSN0w1/view?usp=sharing",
-            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1lEtd22DNLlo3a1widi9KljC2mgzSN0w1/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1hxzPfS7WmxuqLUdhZqciwNrQJKzFIQ4X/view?usp=sharing",
             "item_web_meta.pkl": "https://drive.google.com/file/d/17lsY3PuowRM5cXeDzk9vSU5mODxuF0ri/view?usp=sharing",
             "user_history.pkl": "https://drive.google.com/file/d/1vLbKID7eFIlhDhRtVZuFmxFo9cGVgY9L/view?usp=sharing",
         },
