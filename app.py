@@ -69,6 +69,16 @@ DATASETS = {
             "user_history.pkl": "https://drive.google.com/file/d/1g914V7s6CQPTAPKK1YFWdcm3OSDHql2t/view?usp=sharing",
         },
     },
+    "Magazine": {
+        "display": "📘 Magazine",
+        "description": "Đề xuất magazine/sản phẩm magazine từ Amazon Magazine.",
+        "files": {
+            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1nOZVbxMpEUC7d7yWosCoPov5N5OK8W2d/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1Opqk98HFfP7NA9pjZH-3UxHllqBnCCe6/view?usp=sharing",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1i1LdrCayqT10OV18NFP8ZpPQi9GCXr0K/view?usp=sharing",
+            "user_history.pkl": "https://drive.google.com/file/d/1BpLC-zgw5_qgBNiTKbzzo2BSeSbJ_CDS/view?usp=sharing",
+        },
+    },
     
     
 }
