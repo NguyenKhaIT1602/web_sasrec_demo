@@ -35,8 +35,8 @@ class DatasetConfig:
 
 
 DATASETS = {
-    "Beauty": DatasetConfig(
-        name="Beauty",
+    "beauty": DatasetConfig(
+        name="beauty",
         display_name="💄 Beauty Recommendation",
         description="Đề xuất sản phẩm làm đẹp từ Amazon Beauty.",
         files={
@@ -46,8 +46,8 @@ DATASETS = {
             "user_history.pkl": "https://drive.google.com/file/d/1PSHhecbBQFcTUWw7ojzyZkGp5dvQfBu9/view?usp=sharing",
         }
     ),
-    "Movies": DatasetConfig(
-        name="Movies",
+    "movies": DatasetConfig(
+        name="movies",
         display_name="🎬 Movies Recommendation",
         description="Đề xuất phim/sản phẩm Movies từ Amazon Movies.",
         files={
