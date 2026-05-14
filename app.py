@@ -99,7 +99,7 @@ def download_from_google_drive(dataset_key, filename, url_or_id):
     url = f"https://drive.google.com/uc?id={file_id}"
 
     with st.spinner(f"Đang tải {DATASETS[dataset_key]['display']} - {filename} từ Google Drive..."):
-        gdown.download(url, output_path, quiet=False, fuzzy=True)
+        gdown.download(id=file_id, output=output_path, quiet=False)
 
     if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
         raise RuntimeError(
