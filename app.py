@@ -66,6 +66,18 @@ def get_dataset_dir(dataset_name):
     return path
 
 
+def extract_drive_id(file_id_or_url):
+    file_id_or_url = str(file_id_or_url).strip()
+
+    if "drive.google.com/file/d/" in file_id_or_url:
+        return file_id_or_url.split("/file/d/")[1].split("/")[0]
+
+    if "id=" in file_id_or_url:
+        return file_id_or_url.split("id=")[1].split("&")[0]
+
+    return file_id_or_url
+
+
 def download_from_google_drive(dataset_name, filename, file_id):
     dataset_dir = get_dataset_dir(dataset_name)
     output_path = os.path.join(dataset_dir, filename)
@@ -73,12 +85,15 @@ def download_from_google_drive(dataset_name, filename, file_id):
     if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
         return output_path
 
-    url = f"https://drive.google.com/uc?id={file_id}"
+    real_file_id = extract_drive_id(file_id)
+
+    url = f"https://drive.google.com/uc?id={real_file_id}"
 
     result = gdown.download(
         url=url,
         output=output_path,
-        quiet=True
+        quiet=False,
+        fuzzy=True
     )
 
     if result is None or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
@@ -88,7 +103,6 @@ def download_from_google_drive(dataset_name, filename, file_id):
         )
 
     return output_path
-
 
 def ensure_required_files(dataset_config):
     paths = {}
