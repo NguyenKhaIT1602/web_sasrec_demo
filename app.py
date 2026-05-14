@@ -54,7 +54,7 @@ DATASETS = {
         "description": "Đề xuất video/sản phẩm Videos từ Amazon Videos.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1cUs5l_eE_inJpywjH23lQuLB54abmMab/view?usp=sharing",
-            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1hxzPfS7WmxuqLUdhZqciwNrQJKzFIQ4X/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1jVrM6LKjRTGLvj8A6bHO6tDWHIBGoEQs/view?usp=sharing",
             "item_web_meta.pkl": "https://drive.google.com/file/d/1T_-6_5YqsJQdjGRR-8U-LQLMH2pOpJiI/view?usp=sharing",
             "user_history.pkl": "https://drive.google.com/file/d/1jVrM6LKjRTGLvj8A6bHO6tDWHIBGoEQs/view?usp=sharing",
         },
