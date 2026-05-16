@@ -33,10 +33,10 @@ DATASETS = {
         "display": "💄 Beauty",
         "description": "Đề xuất sản phẩm làm đẹp từ Amazon Beauty.",
         "files": {
-            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/18BE3T9Rt1UaEysriDHosAYsrfOCmGNCo/view?usp=sharing",
-            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1BD_amnmNO57GCpsNIbErLg9_FLXA6J9p/view?usp=sharing",
-            "item_web_meta.pkl": "https://drive.google.com/file/d/1COgYR2ahgo66Vp2I_zyLCyrRptCNRkK8/view?usp=sharing",
-            "user_history.pkl": "https://drive.google.com/file/d/1PSHhecbBQFcTUWw7ojzyZkGp5dvQfBu9/view?usp=sharing",
+            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1KK5nVBQBTXS5uD3eClgyN7dNcNifk5k7/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/16qff7qxi5VIWrIncZwoF023rjSAKerBU/view?usp=sharing",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1mwNONF_hcJMOgxxCTNbJ14vVGwOckWKI/view?usp=sharing",
+            "user_history.pkl": "https://drive.google.com/file/d/1AIEGIncTl9DHWfGuImxpUElUXoFzesJo/view?usp=sharing",
         },
     },
     "Movies": {
