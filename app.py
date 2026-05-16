@@ -63,20 +63,20 @@ DATASETS = {
         "display": "🚗 Toys",
         "description": "Đề xuất toys/sản phẩm toys từ Amazon Toys.",
         "files": {
-            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1uEjh1XfoxatnHelp2s2zt3XKEZugAe-1/view?usp=sharing",
-            "fused_item_emb_128.pt": "https://drive.google.com/file/d/12y8gh82GfvvTiiD54z5UO4ET57uZSBQC/view?usp=sharing",
-            "item_web_meta.pkl": "https://drive.google.com/file/d/1WXrZa-2GL62IUkspntWVGwWDUi_Nccbn/view?usp=sharing",
-            "user_history.pkl": "https://drive.google.com/file/d/1g914V7s6CQPTAPKK1YFWdcm3OSDHql2t/view?usp=sharing",
+            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1kVlbc2JZDNSU9gxX65fV6QMqerpOVCZg/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1ASu0SY0hVxHQBN_Be2eO106PpY6ATFHk/view?usp=sharing",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1gLG4NYp5l5xGSwWeHiRgGHVNxyulXYLc/view?usp=sharing",
+            "user_history.pkl": "https://drive.google.com/file/d/1NoDmXy11kTjt17B90wGHtHPszthd3yTC/view?usp=sharing",
         },
     },
     "Magazine": {
         "display": "📘 Magazine",
         "description": "Đề xuất magazine/sản phẩm magazine từ Amazon Magazine.",
         "files": {
-            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1nOZVbxMpEUC7d7yWosCoPov5N5OK8W2d/view?usp=sharing",
-            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1Opqk98HFfP7NA9pjZH-3UxHllqBnCCe6/view?usp=sharing",
-            "item_web_meta.pkl": "https://drive.google.com/file/d/1i1LdrCayqT10OV18NFP8ZpPQi9GCXr0K/view?usp=sharing",
-            "user_history.pkl": "https://drive.google.com/file/d/1BpLC-zgw5_qgBNiTKbzzo2BSeSbJ_CDS/view?usp=sharing",
+            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1SHWFbsBG6-NlLwgpu-23fuGtqul3chrQ/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1S7nvQUE65X90LnI0F3OcB5BinboGG8MK/view?usp=sharing",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1AUC7QMN4CMyfP5lQkSPl6Eh61WlP-p8q/view?usp=sharingg",
+            "user_history.pkl": "https://drive.google.com/file/d/1T_PYJb3z0G3GS5oukJ8ypJxssfLY9tYh/view?usp=sharing",
         },
     },
     
