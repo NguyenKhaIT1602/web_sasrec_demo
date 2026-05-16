@@ -1446,7 +1446,7 @@ else:
         st.session_state[user_state_key] = all_users[0]
 
     selected_user = st.sidebar.selectbox(
-        "👤 Chọn ID",
+        "👤 Chọn ID user",
         all_users,
         index=all_users.index(st.session_state[user_state_key])
     )
