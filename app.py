@@ -1064,7 +1064,7 @@ def rec_product_card(p, api_key=None, api_type="Groq", history_titles=None, user
     brand_html = f'<div class="meta-item"><div class="meta-label">Thương hiệu</div><div class="meta-value">🏷️ {short_text(p["brand"], 35)}</div></div>' if p["brand"] else ""
     cat_html = f'<div class="meta-item"><div class="meta-label">Danh mục</div><div class="meta-value">📦 {short_text(p["category"], 50)}</div></div>' if p["category"] else ""
 
-    card_html = f'<div class="rec-card"><span class="badge">Rank #{p["rank"]}</span>{img_html}<div class="title">{short_text(p["title"], 90)}</div>{brand_html}{cat_html}<div class="price">{p["price"]}</div><div class="score">Độ phù hợp: {p["score"]:.4f}</div></div>'
+    card_html = f'<div class="rec-card"><span class="badge">Rank #{p["rank"]}</span>{img_html}<div class="title">{short_text(p["title"], 90)}</div>{brand_html}{cat_html}<div class="price">{p["price"]}</div><div class="score">Độ phù hợp: {p["score"] * 100:.2f}%</div></div>'
     
     st.markdown(card_html, unsafe_allow_html=True)
 
