@@ -30,8 +30,8 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATASETS = {
     "Beauty": {
-        "display": "💄 Beauty",
-        "description": "Đề xuất sản phẩm làm đẹp từ Amazon Beauty.",
+        "display": "💄 All Beauty",
+        "description": "Đề xuất sản phẩm làm đẹp từ Amazon All Beauty.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1KK5nVBQBTXS5uD3eClgyN7dNcNifk5k7/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/16qff7qxi5VIWrIncZwoF023rjSAKerBU/view?usp=sharing",
@@ -40,8 +40,8 @@ DATASETS = {
         },
     },
     "Movies": {
-        "display": "🎬 Movies",
-        "description": "Đề xuất phim/sản phẩm Movies từ Amazon Movies.",
+        "display": "🎬 Movies and TV",
+        "description": "Đề xuất phim từ Amazon Movies and TV.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1lEtd22DNLlo3a1widi9KljC2mgzSN0w1/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1hxzPfS7WmxuqLUdhZqciwNrQJKzFIQ4X/view?usp=sharing",
@@ -50,8 +50,8 @@ DATASETS = {
         },
     },
     "Videos": {
-        "display": "📹 Videos",
-        "description": "Đề xuất video/sản phẩm videos từ Amazon Videos.",
+        "display": "📹 Video Games",
+        "description": "Đề xuất video Amazon Video Games.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1cUs5l_eE_inJpywjH23lQuLB54abmMab/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1jVrM6LKjRTGLvj8A6bHO6tDWHIBGoEQs/view?usp=sharing",
@@ -60,8 +60,8 @@ DATASETS = {
         },
     },
     "Toys": {
-        "display": "🚗 Toys",
-        "description": "Đề xuất toys/sản phẩm toys từ Amazon Toys.",
+        "display": "🚗 Toys and Games",
+        "description": "Đề xuất đồ chơi từ Amazon Toys and Games.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1kVlbc2JZDNSU9gxX65fV6QMqerpOVCZg/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1ASu0SY0hVxHQBN_Be2eO106PpY6ATFHk/view?usp=sharing",
@@ -70,8 +70,8 @@ DATASETS = {
         },
     },
     "Magazine": {
-        "display": "📘 Magazine",
-        "description": "Đề xuất magazine/sản phẩm magazine từ Amazon Magazine.",
+        "display": "📘 Magazine Subscriptions",
+        "description": "Đề xuất tạp chí từ Amazon Magazine Subscriptions.",
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1SHWFbsBG6-NlLwgpu-23fuGtqul3chrQ/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1S7nvQUE65X90LnI0F3OcB5BinboGG8MK/view?usp=sharing",
@@ -79,6 +79,17 @@ DATASETS = {
             "user_history.pkl": "https://drive.google.com/file/d/1T_PYJb3z0G3GS5oukJ8ypJxssfLY9tYh/view?usp=sharing",
         },
     },
+    "Books": {
+        "display": "📚 Books",
+        "description": "Đề xuất sách từ Amazon Books.",
+        "files": {
+            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1mf94HDT_IRAEZfrs2Rt_kXSCdp6zVYQP/view?usp=sharing",
+            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1WtSNhDJNG2mpfzDVVgIJpfsgg7UIVUXK/view?usp=sharing",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1KXwbbyoXYRBUuzZxkrB0BOMoZ7iCAw7P/view?usp=sharing",
+            "user_history.pkl": "https://drive.google.com/file/d/1SbwLERNRAa9I2P_prim-QeQzkwnWQmiP/view?usp=sharing",
+        },
+    },
+    
     
     
 }
