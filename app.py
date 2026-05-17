@@ -79,19 +79,16 @@ DATASETS = {
             "user_history.pkl": "https://drive.google.com/file/d/1T_PYJb3z0G3GS5oukJ8ypJxssfLY9tYh/view?usp=sharing",
         },
     },
-    "Books": {
-        "display": "📚 Books",
-        "description": "Đề xuất sách từ Amazon Books.",
-        "files": {
-            "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1mf94HDT_IRAEZfrs2Rt_kXSCdp6zVYQP/view?usp=sharing",
-            "fused_item_emb_128.pt": "https://drive.google.com/file/d/1WtSNhDJNG2mpfzDVVgIJpfsgg7UIVUXK/view?usp=sharing",
-            "item_web_meta.pkl": "https://drive.google.com/file/d/1QlH1r9E3ISPFOCzODH6Dv-cQ92T0m-R9/view?usp=sharing",
-            "user_history.pkl": "https://drive.google.com/file/d/1SbwLERNRAa9I2P_prim-QeQzkwnWQmiP/view?usp=sharing",
-        },
-    },
-    
-    
-    
+    # "Books": {
+    #     "display": "📚 Books",
+    #     "description": "Đề xuất sách từ Amazon Books.",
+    #     "files": {
+    #         "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1mf94HDT_IRAEZfrs2Rt_kXSCdp6zVYQP/view?usp=sharing",
+    #         "fused_item_emb_128.pt": "https://drive.google.com/file/d/1WtSNhDJNG2mpfzDVVgIJpfsgg7UIVUXK/view?usp=sharing",
+    #         "item_web_meta.pkl": "https://drive.google.com/file/d/1QlH1r9E3ISPFOCzODH6Dv-cQ92T0m-R9/view?usp=sharing",
+    #         "user_history.pkl": "https://drive.google.com/file/d/1SbwLERNRAa9I2P_prim-QeQzkwnWQmiP/view?usp=sharing",
+    #     },
+    # },
 }
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
