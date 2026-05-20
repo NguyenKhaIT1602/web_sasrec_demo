@@ -3,6 +3,7 @@ import re
 import pickle
 import random
 import json
+import html
 import requests
 import gdown
 from collections import Counter
@@ -75,7 +76,7 @@ DATASETS = {
         "files": {
             "sasrec_qwen_best.pt": "https://drive.google.com/file/d/1SHWFbsBG6-NlLwgpu-23fuGtqul3chrQ/view?usp=sharing",
             "fused_item_emb_128.pt": "https://drive.google.com/file/d/1S7nvQUE65X90LnI0F3OcB5BinboGG8MK/view?usp=sharing",
-            "item_web_meta.pkl": "https://drive.google.com/file/d/1AUC7QMN4CMyfP5lQkSPl6Eh61WlP-p8q/view?usp=sharingg",
+            "item_web_meta.pkl": "https://drive.google.com/file/d/1AUC7QMN4CMyfP5lQkSPl6Eh61WlP-p8q/view?usp=sharing",
             "user_history.pkl": "https://drive.google.com/file/d/1T_PYJb3z0G3GS5oukJ8ypJxssfLY9tYh/view?usp=sharing",
         },
     },
@@ -320,11 +321,8 @@ html, body, [data-testid="stAppViewContainer"] {
     position: relative !important;
 }
 
-/* Container của các nút tương tác (AI, Info, System) */
-[data-testid="column"] .element-container:has(button),
-[data-testid="column"] .element-container:has(.stExpander) {
-    position: relative !important;
-}
+/* Container của các nút tương tác (AI, Info, System)
+   Đã bỏ selector :has(...) vì có thể gây lỗi frontend trên Streamlit Cloud. */
 
 .history-card {
     background: white;
@@ -617,11 +615,6 @@ html, body, [data-testid="stAppViewContainer"] {
 
 
 /* Dialog styling */
-div[data-testid="stDialog"] div[data-testid="stVerticalBlock"] > div.element-container:has(img) {
-    display: flex !important;
-    justify-content: center !important;
-}
-
 div[data-testid="stDialog"] img {
     max-height: 350px !important;
     width: auto !important;
@@ -765,6 +758,8 @@ class WebSASRecQwen(nn.Module):
 # ============================================================
 
 def render_metric_html(label, value):
+    label = html_text(label)
+    value = html_text(value)
     return f"""
     <div class="metric-box">
         <div style="color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">{label}</div>
@@ -781,25 +776,43 @@ def safe_str(x):
 
 
 def clean_text(text):
-    """Loại bỏ mã HTML, CSS rác khỏi text và các ký tự gây lỗi f-string."""
+    """Làm sạch và escape text trước khi đưa vào HTML.
+
+    Lý do: metadata Amazon đôi khi chứa ký tự HTML lỗi, ví dụ "script<",
+    hoặc các thẻ HTML/CSS. Nếu đưa trực tiếp vào st.markdown(..., unsafe_allow_html=True)
+    có thể làm Streamlit Cloud vỡ frontend với lỗi createElement.
+    """
     text = safe_str(text)
-    # Loại bỏ thẻ style và nội dung bên trong
-    text = re.sub(r'<style.*?>.*?</style>', '', text, flags=re.DOTALL | re.IGNORECASE)
-    # Loại bỏ các khối CSS rác
-    text = re.sub(r'\{[^{}]*\}', '', text)
-    text = re.sub(r'\.[a-zA-Z0-9_-]+\s*\{.*?\}', '', text, flags=re.DOTALL)
-    # Loại bỏ thẻ HTML
-    text = re.sub(r'<[^>]*>', '', text)
-    # Loại bỏ các ký tự đặc biệt có thể phá vỡ HTML/f-string
-    text = text.replace('"', "'").replace('$', 'S')
-    # Loại bỏ các ký tự đặc biệt rác
-    text = re.sub(r'\s+', ' ', text)
-    return text.strip()
+
+    # Bỏ nội dung script/style nếu có.
+    text = re.sub(r'<\s*script[^>]*>.*?<\s*/\s*script\s*>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<\s*style[^>]*>.*?<\s*/\s*style\s*>', '', text, flags=re.DOTALL | re.IGNORECASE)
+
+    # Xử lý các chuỗi lỗi thường gặp như script<, style<, div<...
+    text = re.sub(r'\b(script|style|iframe|object|embed)\s*<', r'\1 ', text, flags=re.IGNORECASE)
+
+    # Bỏ tất cả thẻ HTML còn lại.
+    text = re.sub(r'<[^>]*>', ' ', text)
+
+    # Bỏ khối CSS rác.
+    text = re.sub(r'\{[^{}]*\}', ' ', text)
+    text = re.sub(r'\.[a-zA-Z0-9_-]+\s*\{.*?\}', ' ', text, flags=re.DOTALL)
+
+    # Chuẩn hóa khoảng trắng.
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    # Escape để an toàn khi render trong HTML.
+    return html.escape(text, quote=True)
 
 
 def short_text(text, n=80):
     text = clean_text(text)
     return text if len(text) <= n else text[:n].rstrip() + "..."
+
+
+def html_text(text):
+    """Escape text bất kỳ để hiển thị an toàn trong HTML custom."""
+    return html.escape(safe_str(text), quote=True)
 
 
 def get_meta(item_meta, iid):
@@ -849,8 +862,11 @@ def get_image(meta):
         img = meta.get(key, "")
         if isinstance(img, list) and len(img) > 0:
             img = img[0]
-        if isinstance(img, str) and img.startswith("http"):
-            return img
+        if isinstance(img, str):
+            img = img.strip()
+            # Chỉ nhận URL ảnh http/https và chặn ký tự phá HTML attribute.
+            if img.startswith(("http://", "https://")) and all(ch not in img for ch in ['"', "'", "<", ">"]):
+                return img
     return ""
 
 
@@ -862,8 +878,9 @@ def get_price(meta):
 
 
 def render_img_html(image, height=180):
-    if image and image.startswith("http"):
-        return f'<img src="{image}" style="height:{height}px; width:100%; object-fit:contain; border-radius:12px; margin-bottom:10px;">'
+    if image and image.startswith(("http://", "https://")):
+        safe_image = html.escape(image, quote=True)
+        return f'<img src="{safe_image}" style="height:{height}px; width:100%; object-fit:contain; border-radius:12px; margin-bottom:10px;">'
     else:
         return f'<div class="no-img" style="height:{height}px;">No Image</div>'
 
@@ -1016,7 +1033,7 @@ def show_ai_dialog(api_key, api_type, p, history_titles):
     elif explanation:
         st.markdown(f"""
         <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 20px; border-radius: 16px; border: 1px solid #bbf7d0;">
-            <div style="color: #166534; font-size: 1.1rem; line-height: 1.6;">{explanation}</div>
+            <div style="color: #166534; font-size: 1.1rem; line-height: 1.6;">{html_text(explanation)}</div>
         </div>
         """, unsafe_allow_html=True)
     else:
@@ -1028,7 +1045,7 @@ def show_system_dialog(reason):
     """Hiển thị popup lý do đề xuất từ hệ thống."""
     st.markdown(f"""
     <div class="reason" style="font-size: 1.1rem; padding: 20px; border-radius: 16px;">
-        {reason}
+        {html_text(reason)}
     </div>
     """, unsafe_allow_html=True)
 
