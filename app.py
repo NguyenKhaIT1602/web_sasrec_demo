@@ -871,10 +871,22 @@ def get_image(meta):
 
 
 def get_price(meta):
-    price = clean_text(meta.get("price", ""))
-    if "{" in price or "}" in price or "." in price:
+    raw = safe_str(meta.get("price", ""))
+
+    # Nếu price chứa HTML/CSS rác thì bỏ
+    bad_patterns = ["<div", "</div", "class=", "a-section", "style=", "<span", "</span", "{", "}"]
+    if any(p in raw.lower() for p in bad_patterns):
         return "Liên hệ"
-    return price if price else "Liên hệ"
+
+    price = clean_text(raw)
+
+    if not price or len(price) > 40:
+        return "Liên hệ"
+
+    if "<" in price or ">" in price or "class=" in price.lower():
+        return "Liên hệ"
+
+    return price
 
 
 def render_img_html(image, height=180):
